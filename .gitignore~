@@ -1,2 +1,7 @@
 bedtools/*
 data_bw/*
+<<<<<<< HEAD
+bedGraph_data/*
+=======
+*.bedGraph
+>>>>>>> de7fc12675630688ffd8d9943e540a43ff90b165
