@@ -77,28 +77,21 @@ map<string, vector<Enhancer> > splitEnhancers(vector<Enhancer> enhancers) {
 }
 
 void update_enhancers(vector<Enhancer>& enhancers, BedLine bl, vector<float>& result) {
-    // vector<Enhancer> toRemove;
+   
     for (int i = 0; i < enhancers.size(); i++) {
         Enhancer enhancer = enhancers[i];
         int idx = enhancer.id;
         if (enhancer.start >= bl.start && enhancer.start < bl.end) {
             int region_len = min(enhancer.end, bl.end) - enhancer.start;
             result[idx] += (bl.value / region_len);
-            // if (enhancer.end <= bl.end + 1) {
-            //     to_remove.push_back(i)
-            // }
+            
         } else if (enhancer.start <= bl.start && enhancer.end >= bl.end) {
             int region_len = bl.end - bl.start;
             result[idx] += (bl.value / region_len);
-            // if (enhancer.end <= bl.end + 1) {
-            //     to_remove.push_back(i)
-            // }
+           
         } else if (enhancer.start <= bl.start && enhancer.end > bl.start && enhancer.end <= bl.end) {
             int region_len = min(bl.end, enhancer.end) - bl.start;
             result[idx] += (bl.value / region_len);
-            // if (enhancer.end <= bl.end + 1) {
-            //     to_remove.push_back(i);
-            // }
         }
     }
 }
