@@ -28,10 +28,7 @@ def process_file(bedGraphFile):
     enhancer_dict = {}
     for idx, enhancer in enumerate(enhancers):
         enhancer_dict[idx] = enhancer
-
-    # print "This is the enhancer dict: ", enhancer_dict
     with open(bedGraphFile) as f:
-
         for line in f:
             tokens = line.split()
             chrom = tokens[0]
@@ -39,24 +36,11 @@ def process_file(bedGraphFile):
             end = int(tokens[2])
             value = float(tokens[3])
             to_remove = []
-
-            print "NEXT ITERATION"
-            print "--------------------------"
             # for idx, enhancer in enumerate(enhancers):
             for idx, enhancer in enhancer_dict.items():
                 # match the track
                 if enhancer[0] == chrom:
-
-                    print "This is the start ENHANCER", enhancer[1]
-                    print "BEDGRAPH START: ", start
-                    print " ------------------------"
-                    print "This is the end ENHANCER", enhancer[2]
-                    print "BEDGRAPH END: ", end
-                    print "-------------------------"
-
                     if enhancer[1] >= start and enhancer[1] < end:
-
-                        print "Entered case 1"
                         # we have found the start of an enhancer
                         # print("Track range: %d -> %d" % (start, end))
                         # print("Enhancer range: %d -> %d" % (enhancer[1], enhancer[2]))
@@ -66,8 +50,6 @@ def process_file(bedGraphFile):
                             # we are done processing this one
                             to_remove.append(idx)
                     elif enhancer[1] <= start and enhancer[2] >= end:
-
-                        print "Entered case 2"
                         # enhancer encapsulates this whole region
                         # print("Track range: %d -> %d" % (start, end))
                         # print("Enhancer range: %d -> %d" % (enhancer[1], enhancer[2]))
@@ -77,8 +59,6 @@ def process_file(bedGraphFile):
                             # we are done processing this one
                             to_remove.append(idx)
                     elif enhancer[1] <= start and enhancer[2] > start and enhancer[2] <= end:
-
-                        print "Entered case 3"
                         # enhancer ends in this segment, but started before it
                         # print("Track range: %d -> %d" % (start, end))
                         # print("Enhancer range: %d -> %d" % (enhancer[1], enhancer[2]))
@@ -87,7 +67,6 @@ def process_file(bedGraphFile):
                         if (enhancer[2] <= end + 1):
                             # we are done processing this one
                             to_remove.append(idx)
-
             for enhancer_idx in to_remove:
                 del enhancer_dict[enhancer_idx]
 
@@ -99,15 +78,12 @@ def process_all_files(directory):
     enhancers = load_enhancers()
     files = os.listdir(directory)
     # process_bed_file = lambda x: process_file(x, enhancers)
-    bed_files = [directory + '/' + x for x in files if x[0] != "."]
-    print bed_files
-    for f in bed_files:
-        values = process_file(f)
-        print values
-        break
-        # process_bed_file(f)
-    # with Pool(3) as p:
-    #     p.map(process_file, bed_files)
+    bed_files = [directory + '/' + x for x in files if x.endswith('.bedGraph')]
+    # for f in bed_files:
+    #     # process_file(directory + '/' + f, enhancers)
+    #     process_bed_file(f)
+    with Pool(3) as p:
+        p.map(process_file, bed_files)
     print("DONE!")
 
-process_all_files('bedGraph_data')
+process_all_files('bed_data')

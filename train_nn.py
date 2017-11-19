@@ -1,3 +1,4 @@
+
 class NeuralNetModel:
 def __init__(self, num_params):
         self.num_weights = num_params
@@ -12,15 +13,15 @@ def __init__(self, num_params):
 
     def predict(self, x):
         # w = tf.Variable((self.num_weights, 2), dtype=tf.float32, initializer=tf.zeros())                                                                            \
-                                                                                                                                                                       
+
         # b = tf.Variable((1,), dtype=tf.float32, initializer=tf.zeros_initializer())                                                                                 \
-                                                                                                                                                                       
+
         # preds = tf.matmul(x, w) + b                                                                                                                                 \
-                                                                                                                                                                       
-        # ^ Shorthand for the above ^                                                                                                             
-                                                                                                                                                                       
+
+        # ^ Shorthand for the above ^
+
         prediction = tf.layers.dense(inputs=x, units=2, use_bias=True)
-        return prediction # batch_size x 2                                                                                                                                                                                                                                                                                
+        return prediction # batch_size x 2
 
     def loss(self, preds):
         one_hot = tf.one_hot(self.labels_place, 2)

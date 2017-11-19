@@ -58,12 +58,12 @@ def __init__(self, num_params):
         self.train_op = self.train_step(self.loss_val)
 
     def predict(self, x):
-        # w = tf.Variable((self.num_weights, 2), dtype=tf.float32, initializer=tf.zeros())                                                                             
-        # b = tf.Variable((1,), dtype=tf.float32, initializer=tf.zeros_initializer())                                                                                  
-        # preds = tf.matmul(x, w) + b                                                                                                                                  
-        # ^ Shorthand for the above ^                                                                                                                                  
+        # w = tf.Variable((self.num_weights, 2), dtype=tf.float32, initializer=tf.zeros())
+        # b = tf.Variable((1,), dtype=tf.float32, initializer=tf.zeros_initializer())
+        # preds = tf.matmul(x, w) + b
+        # ^ Shorthand for the above ^
         prediction = tf.layers.dense(inputs=x, units=2, use_bias=True)
-        return prediction # batch_size x 2                                                                                                                             
+        return prediction # batch_size x 2
 
     def loss(self, preds):
         one_hot = tf.one_hot(self.labels_place, 2)
@@ -86,7 +86,7 @@ def __init__(self, num_params):
         }
         output_feed = [self.loss_val, self.train_op]
         curr_loss, _ = session.run(output_feed, feed_dict=input_feed)
-        print(loss) 
+        print(loss)
 
 
 
@@ -110,6 +110,7 @@ def split_data(pos_data, neg_data, SPLIT=0.8):
 
 model = RegressionModel(10)
 sess = tf.Session()
+
 
 model_nn = NeuralNetModel(10)
 sess_nn = tf.Session()
