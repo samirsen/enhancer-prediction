@@ -125,7 +125,7 @@ def batch_validate(pos_valid, neg_valid, model, session):
     return loss, summary
 
 def whole_validate(pos_valid, neg_valid, model, session):
-    pos_sample, neg_sample = pos_valid, neg_valid
+    pos_sample, neg_sample = pos_train, neg_train
     samples = np.concatenate((pos_sample, neg_sample))
     labels = np.array([1] * len(pos_sample) + [0] * len(neg_sample))
     shuf_indices = list(range(len(pos_sample) + len(neg_sample)))
