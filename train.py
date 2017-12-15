@@ -3,6 +3,8 @@ import tensorflow as tf
 import random
 import os
 import pandas as pd
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
 
 VISTA_labels = "./Enhancer_Prediction/Tables/enhancers.xlsx"
 
@@ -32,6 +34,7 @@ class NeuralNetModel:
         l1 = tf.layers.dense(inputs=x, units=self.num_weights, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), kernel_regularizer=regularizer)
         l1 = tf.nn.relu(l1)
         l2 = tf.layers.dense(inputs=l1, units=self.num_weights, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), kernel_regularizer=regularizer)
+        self.featurization = l2
         l2 = tf.nn.relu(l2)
         prediction = tf.layers.dense(inputs=l2, units=2, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), kernel_regularizer=regularizer)
         return prediction # batch_size x 2
@@ -79,6 +82,14 @@ class NeuralNetModel:
         print("accuracy: " + str(accuracy))
         print("auc: " + str(auc))
         return curr_loss, summary, auc, precision
+
+    def get_featurization(self, session, x_batch):
+        input_feed = {
+            self.x_place: x_batch
+        }
+        output_feed = self.featurization
+        features = session.run(output_feed, feed_dict=input_feed)
+        return features
 
 
 def separate_data(data, labels):
@@ -164,6 +175,18 @@ def batch_train(train_data, validation_data, model, session, iters = 10):
             prec_values.append(auc)
             test_writer.add_summary(summary, i)
 
+def generate_pca(data, model, session):
+    pos_sample, neg_sample = data
+    samples = np.concatenate((pos_sample, neg_sample))
+    labels = np.array([1] * len(pos_sample) + [0] * len(neg_sample))
+    featurization = model.get_featurization(session, samples)
+    pca = PCA(n_components=2) #2-dimensional PCA
+    transformed = pd.DataFrame(pca.fit_transform(featurization))
+    plt.scatter(transformed[labels==1][0], transformed[labels==1][1], label='Positive', c='red')
+    plt.scatter(transformed[labels==0][0], transformed[labels==0][1], label='Negative', c='blue')
+    plt.legend()
+    plt.show()
+
 # load and separate the data
 # data_frame = pd.read_csv('train_data_fully_processed.csv')
 data_frame = pd.read_csv('new_feature_extraction.csv')
@@ -191,3 +214,4 @@ sess.run(init)
 batch_train((pos_train, neg_train), (pos_valid, neg_valid), model, sess, 1000)
 np.save("auc", np.array(auc_values))
 np.save("precision", np.array(prec_values))
+generate_pca((pos_train, neg_train), model, sess)
