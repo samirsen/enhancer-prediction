@@ -187,6 +187,16 @@ def generate_pca(data, model, session):
     plt.legend()
     plt.show()
 
+def generate_auc_plot():
+    auc_arr = np.array(auc_values)
+    x = auc_arr[:, 0]
+    y = auc_arr[:, 1]
+    plt.plot(x, y)
+    plt.title('AUC plot for 3-layer neural net')
+    plt.xlabel('Negative Labels')
+    plt.ylabel('Positive Labels')
+    plt.show()
+
 # load and separate the data
 # data_frame = pd.read_csv('train_data_fully_processed.csv')
 data_frame = pd.read_csv('new_feature_extraction.csv')
@@ -212,6 +222,9 @@ init = tf.group(tf.global_variables_initializer(), tf.local_variables_initialize
 sess.run(init)
 # train the model
 batch_train((pos_train, neg_train), (pos_valid, neg_valid), model, sess, 1000)
-np.save("auc", np.array(auc_values))
-np.save("precision", np.array(prec_values))
-generate_pca((pos_train, neg_train), model, sess)
+auc_arr = np.array(auc_values)
+print(auc_arr.shape)
+generate_auc_plot()
+# np.save("auc", np.array(auc_values))
+# np.save("precision", np.array(prec_values))
+# generate_pca((pos_train, neg_train), model, sess)
