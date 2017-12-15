@@ -36,6 +36,8 @@ class NeuralNetModel:
         prediction = tf.layers.dense(inputs=l2, units=2, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), kernel_regularizer=regularizer)
         return prediction # batch_size x 2
 
+    # def build_embeddings(self, pos_data, neg_data):
+
     def loss(self, preds):
         predicted_labels = tf.argmax(preds, axis=-1)
         correct_prediction = tf.equal(predicted_labels, self.labels_place)
@@ -47,6 +49,8 @@ class NeuralNetModel:
                 logits=preds,
             )
         loss_val = tf.reduce_mean(sofmax_ce_loss)
+        self.auc = tf.metrics.auc(self.labels_place, predicted_labels)
+        self.precision = tf.metrics.precision(self.labels_place, predicted_labels)
         tf.summary.scalar('loss', loss_val)
         return loss_val
 
@@ -70,10 +74,11 @@ class NeuralNetModel:
             self.x_place: x_batch,
             self.labels_place: labels_batch
         }
-        output_feed = [self.loss_val, self.accuracy, self.summary]
-        curr_loss, accuracy, summary = session.run(output_feed, feed_dict=input_feed)
+        output_feed = [self.loss_val, self.accuracy, self.summary, self.auc, self.precision]
+        curr_loss, accuracy, summary, auc, precision = session.run(output_feed, feed_dict=input_feed)
         print("accuracy: " + str(accuracy))
-        return curr_loss, summary
+        print("auc: " + str(auc))
+        return curr_loss, summary, auc, precision
 
 
 def separate_data(data, labels):
@@ -109,7 +114,7 @@ def sample_batch(pos_train, neg_train, num_samples):
 
 def batch_validate(pos_valid, neg_valid, model, session):
     num_samples = int(pos_valid.shape[0])
-    pos_sample, neg_sample = sample_batch(pos_train, neg_train, num_samples)
+    pos_sample, neg_sample = sample_batch(pos_valid, neg_valid, num_samples)
     samples = np.concatenate((pos_sample, neg_sample))
     labels = np.array([1] * num_samples + [0] * num_samples)
     shuf_indices = list(range(num_samples * 2))
@@ -118,6 +123,20 @@ def batch_validate(pos_valid, neg_valid, model, session):
     samples = samples[shuf_indices]
     loss, summary = model.validate(session, samples, labels)
     return loss, summary
+
+def whole_validate(pos_valid, neg_valid, model, session):
+    pos_sample, neg_sample = pos_valid, neg_valid
+    samples = np.concatenate((pos_sample, neg_sample))
+    labels = np.array([1] * len(pos_sample) + [0] * len(neg_sample))
+    shuf_indices = list(range(len(pos_sample) + len(neg_sample)))
+    random.shuffle(shuf_indices)
+    labels = labels[shuf_indices]
+    samples = samples[shuf_indices]
+    loss, summary, auc, precision = model.validate(session, samples, labels)
+    return loss, summary, auc, precision
+
+auc_values = []
+prec_values = []
 
 def batch_train(train_data, validation_data, model, session, iters = 10):
     pos_train, neg_train = train_data
@@ -139,7 +158,10 @@ def batch_train(train_data, validation_data, model, session, iters = 10):
         print(loss)
         if i % 10 == 0:
             print("Validating...")
-            validation_loss, summary = batch_validate(pos_valid, neg_valid, model, session)
+            # validation_loss, summary = batch_validate(pos_valid, neg_valid, model, session)
+            validation_loss, summary, auc, precision = whole_validate(pos_valid, neg_valid, model, session)
+            auc_values.append(auc)
+            prec_values.append(auc)
             test_writer.add_summary(summary, i)
 
 # load and separate the data
@@ -163,6 +185,9 @@ pos_train, neg_train, pos_valid, neg_valid = split_data(pos_data, neg_data)
 # define the model
 model = NeuralNetModel(pos_data.shape[1])
 sess = tf.Session()
-sess.run(tf.global_variables_initializer())
+init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+sess.run(init)
 # train the model
 batch_train((pos_train, neg_train), (pos_valid, neg_valid), model, sess, 1000)
+np.save("auc", np.array(auc_values))
+np.save("precision", np.array(prec_values))
