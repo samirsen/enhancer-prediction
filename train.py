@@ -52,7 +52,7 @@ class NeuralNetModel:
                 logits=preds,
             )
         loss_val = tf.reduce_mean(sofmax_ce_loss)
-        self.auc = tf.metrics.auc(self.labels_place, predicted_labels, curve='PR')
+        self.auc = tf.metrics.auc(self.labels_place, predicted_labels, curve='ROC')
         self.precision = tf.metrics.precision(self.labels_place, predicted_labels)
         tf.summary.scalar('loss', loss_val)
         return loss_val
@@ -175,6 +175,34 @@ def batch_train(train_data, validation_data, model, session, iters = 10):
             prec_values.append(auc)
             test_writer.add_summary(summary, i)
 
+def whole_train(train_data, validation_data, model, session, iters = 100):
+    pos_train, neg_train = train_data
+    pos_valid, neg_valid = validation_data
+    # num_samples = int(pos_train.shape[0])
+    train_writer = tf.summary.FileWriter('summaries/train', sess.graph)
+    test_writer = tf.summary.FileWriter('summaries/validation')
+    # num_samples = 200
+    for i in range(iters):
+        # pos_sample, neg_sample = sample_batch(pos_train, neg_train, num_samples)
+        pos_sample, neg_sample = pos_train, neg_train
+        samples = np.concatenate((pos_sample, neg_sample))
+        # labels = np.array([1] * num_samples + [0] * num_samples)
+        labels = np.array([1] * len(pos_sample) + [0] * len(neg_sample))
+        shuf_indices = list(range(len(pos_sample) + len(neg_sample)))
+        random.shuffle(shuf_indices)
+        labels = labels[shuf_indices]
+        samples = samples[shuf_indices]
+        loss, summary = model.train(session, samples, labels)
+        train_writer.add_summary(summary, i)
+        print(loss)
+        if i % 10 == 0:
+            print("Validating...")
+            # validation_loss, summary = batch_validate(pos_valid, neg_valid, model, session)
+            validation_loss, summary, auc, precision = whole_validate(pos_valid, neg_valid, model, session)
+            auc_values.append(auc)
+            prec_values.append(auc)
+            test_writer.add_summary(summary, i)
+
 def generate_pca(data, model, session):
     pos_sample, neg_sample = data
     samples = np.concatenate((pos_sample, neg_sample))
@@ -229,7 +257,8 @@ sess = tf.Session()
 init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
 sess.run(init)
 # train the model
-batch_train((pos_train, neg_train), (pos_valid, neg_valid), model, sess, 1000)
+# batch_train((pos_train, neg_train), (pos_valid, neg_valid), model, sess, 1000)
+whole_train((pos_train, neg_train), (pos_valid, neg_valid), model, sess, 100)
 # prec_arr = np.array(prec_values)
 # print(prec_arr.shape)
 print(auc_values[-1])
