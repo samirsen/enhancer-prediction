@@ -52,7 +52,7 @@ class NeuralNetModel:
                 logits=preds,
             )
         loss_val = tf.reduce_mean(sofmax_ce_loss)
-        self.auc = tf.metrics.auc(self.labels_place, predicted_labels)
+        self.auc = tf.metrics.auc(self.labels_place, predicted_labels, curve='PR')
         self.precision = tf.metrics.precision(self.labels_place, predicted_labels)
         tf.summary.scalar('loss', loss_val)
         return loss_val
@@ -192,9 +192,17 @@ def generate_auc_plot():
     x = auc_arr[:, 0]
     y = auc_arr[:, 1]
     plt.plot(x, y)
-    plt.title('AUC plot for 3-layer neural net')
+    plt.title('AUPRC plot for 3-layer neural net')
     plt.xlabel('Negative Labels')
     plt.ylabel('Positive Labels')
+    plt.show()
+
+def generate_precision_plot():
+    prec_arr = np.array(prec_values)
+    plt.plot(prec_arr)
+    plt.title('Precision over training')
+    plt.xlabel('Iteration')
+    plt.ylabel('Precision')
     plt.show()
 
 # load and separate the data
@@ -222,9 +230,9 @@ init = tf.group(tf.global_variables_initializer(), tf.local_variables_initialize
 sess.run(init)
 # train the model
 batch_train((pos_train, neg_train), (pos_valid, neg_valid), model, sess, 1000)
-auc_arr = np.array(auc_values)
-print(auc_arr.shape)
+# prec_arr = np.array(prec_values)
+# print(prec_arr.shape)
+print(auc_values[-1])
+# generate_precision_plot()
 generate_auc_plot()
-# np.save("auc", np.array(auc_values))
-# np.save("precision", np.array(prec_values))
 # generate_pca((pos_train, neg_train), model, sess)
